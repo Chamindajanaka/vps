@@ -9,18 +9,12 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install V2Ray Directly
+      - name: Install Xray Core
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl
-          # Downloading and installing the official v2ray binary
-          curl -L https://github.com/v2fly/v2ray-core/releases/latest/download/v2ray-linux-64.zip -o v2ray.zip
-          sudo apt-get install -y unzip
-          unzip v2ray.zip
-          sudo chmod +x v2ray
-          
-          # Writing a custom config file that works on port 54321
-          cat <<EOF > config.json
+          bash <(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)
+          sudo mkdir -p /usr/local/etc/xray
+          sudo cat <<EOF > /usr/local/etc/xray/config.json
           {
             "inbounds": [{
               "port": 54321,
@@ -34,13 +28,10 @@ jobs:
             "outbounds": [{ "protocol": "freedom" }]
           }
           EOF
-          
-          # Running v2ray in the background
-          nohup ./v2ray run -config=config.json > /dev/null 2>&1 &
+          sudo systemctl start xray
 
       - name: Run Cloudflare Quick Tunnel
         run: |
           curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
           sudo dpkg -i cloudflared.deb
-          # This creates the public link
           sudo cloudflared tunnel --url http://localhost:54321
