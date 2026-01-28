@@ -13,9 +13,9 @@ jobs:
         run: |
           sudo apt-get update
           curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh | sudo bash -s -- install
-          sudo mkdir -p /usr/local/etc/xray
-          sudo cat <<EOF > /usr/local/etc/xray/config.json
-          {
+          
+          # Writing config using sudo tee to avoid permission errors
+          echo '{
             "inbounds": [{
               "port": 54321,
               "protocol": "vless",
@@ -26,9 +26,9 @@ jobs:
               "streamSettings": { "network": "ws" }
             }],
             "outbounds": [{ "protocol": "freedom" }]
-          }
-          EOF
-          sudo systemctl start xray
+          }' | sudo tee /usr/local/etc/xray/config.json
+          
+          sudo systemctl restart xray
 
       - name: Run Cloudflare Quick Tunnel
         run: |
