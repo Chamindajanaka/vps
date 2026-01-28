@@ -9,17 +9,18 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install System Dependencies
+      - name: Install V2Ray Directly
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl wget
-
-      - name: Setup V2Ray Core (Fixed Method)
-        run: |
-          bash <(curl -L https://raw.githubusercontent.com/v2fly/fscript/master/install.sh)
-          # Creating a basic config to run on port 54321
-          mkdir -p /etc/v2ray
-          cat <<EOF > /etc/v2ray/config.json
+          sudo apt-get install -y curl
+          # Downloading and installing the official v2ray binary
+          curl -L https://github.com/v2fly/v2ray-core/releases/latest/download/v2ray-linux-64.zip -o v2ray.zip
+          sudo apt-get install -y unzip
+          unzip v2ray.zip
+          sudo chmod +x v2ray
+          
+          # Writing a custom config file that works on port 54321
+          cat <<EOF > config.json
           {
             "inbounds": [{
               "port": 54321,
@@ -33,10 +34,13 @@ jobs:
             "outbounds": [{ "protocol": "freedom" }]
           }
           EOF
-          sudo systemctl start v2ray || true
+          
+          # Running v2ray in the background
+          nohup ./v2ray run -config=config.json > /dev/null 2>&1 &
 
       - name: Run Cloudflare Quick Tunnel
         run: |
           curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
           sudo dpkg -i cloudflared.deb
+          # This creates the public link
           sudo cloudflared tunnel --url http://localhost:54321
