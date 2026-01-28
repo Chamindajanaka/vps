@@ -1,0 +1,32 @@
+name: 24-7 Dedicated VPS Server
+on:
+  workflow_dispatch:
+
+jobs:
+  vps-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl wget
+
+      - name: Install X-UI (V2Ray Panel)
+        run: |
+          bash <(curl -Ls https://raw.githubusercontent.com/vaxilu/x-ui/master/install.sh) <<EOF
+          y
+          admin
+          admin123
+          54321
+          EOF
+
+      - name: Install and Run Cloudflare Tunnel
+        env:
+          TUNNEL_TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
+        run: |
+          curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+          sudo dpkg -i cloudflared.deb
+          cloudflared tunnel --no-autoupdate run --token $TUNNEL_TOKEN
